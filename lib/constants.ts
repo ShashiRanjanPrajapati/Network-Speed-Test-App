@@ -7,8 +7,8 @@ export const DOWNLOAD_DURATION_MS = 10000;
 // Upload test duration in ms
 export const UPLOAD_DURATION_MS = 8000;
 
-// Upload chunk size in bytes (512 KB)
-export const UPLOAD_CHUNK_SIZE = 512 * 1024;
+// Upload chunk size in bytes (2 MB)
+export const UPLOAD_CHUNK_SIZE = 2 * 1024 * 1024;
 
 // Local storage key for history
 export const HISTORY_STORAGE_KEY = "speed-test-history";
