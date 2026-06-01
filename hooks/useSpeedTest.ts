@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { usePingTest } from "./usePingTest";
 import { useDownloadTest } from "./useDownloadTest";
 import { useUploadTest } from "./useUploadTest";
 import { saveResult, loadHistory, deleteResult, clearHistory } from "@/lib/storage";
+import { useNetworkStatus } from "./useNetworkStatus";
 import type { SpeedTestResult, TestState, ErrorCode } from "@/types/speed-test";
 
 const initialState: TestState = {
@@ -28,6 +29,7 @@ export function useSpeedTest() {
   const pingTest     = usePingTest();
   const downloadTest = useDownloadTest();
   const uploadTest   = useUploadTest();
+  const { isOnline } = useNetworkStatus();
 
   /** Master AbortController — aborting this cascades to download + upload */
   const masterRef      = useRef<AbortController>(new AbortController());
@@ -44,6 +46,16 @@ export function useSpeedTest() {
 
   // ── startTest ──────────────────────────────────────────────────────────────
   const startTest = useCallback(async () => {
+    if (!isOnline) {
+      setState((s) => ({
+        ...s,
+        status: "error",
+        error: "No network connection. Please check your internet connection.",
+        errorCode: "no-connection",
+      }));
+      return;
+    }
+
     // Fresh master controller for this run
     masterRef.current      = new AbortController();
     abortReasonRef.current = null;
@@ -111,7 +123,7 @@ export function useSpeedTest() {
         errorCode,
       }));
     }
-  }, [pingTest, downloadTest, uploadTest]);
+  }, [pingTest, downloadTest, uploadTest, isOnline]);
 
   // ── abortTest ──────────────────────────────────────────────────────────────
   /**
@@ -123,6 +135,13 @@ export function useSpeedTest() {
     abortReasonRef.current = reason;
     masterRef.current.abort();
   }, []);
+
+  // Automatically abort the test if the network goes offline during a test run
+  useEffect(() => {
+    if (!isOnline && ["ping", "download", "upload"].includes(state.status)) {
+      abortTest("connection-lost");
+    }
+  }, [isOnline, state.status, abortTest]);
 
   // ── history helpers ────────────────────────────────────────────────────────
   const removeResult = useCallback((id: string) => {
@@ -156,6 +175,7 @@ export function useSpeedTest() {
     history,
     removeResult,
     clearAll,
+    isOnline,
   };
 }
 
