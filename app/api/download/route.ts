@@ -17,7 +17,7 @@ function generateRandomBytes(size: number): Uint8Array {
 export async function GET(_req: NextRequest) {
   const data = generateRandomBytes(CHUNK_SIZE);
 
-  return new Response(data, {
+  return new Response(data.buffer as ArrayBuffer, {
     status: 200,
     headers: {
       "Content-Type": "application/octet-stream",
