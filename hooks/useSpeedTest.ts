@@ -96,18 +96,18 @@ export function useSpeedTest() {
         uploadProgress: 100,
       }));
     } catch (err) {
-      const wasAborted  = masterRef.current.signal.aborted;
-      const errorCode: ErrorCode = abortReasonRef.current ?? "generic";
-      abortReasonRef.current = null;
+      const wasAborted             = masterRef.current.signal.aborted;
+      const errorCode              = (abortReasonRef.current ?? "generic") as ErrorCode;
+      abortReasonRef.current       = null;
+
+      const errorMessage = wasAborted
+        ? (errorCode === "connection-lost" ? "Connection lost during test" : "Test was cancelled")
+        : err instanceof Error ? err.message : "Test failed";
 
       setState((s) => ({
         ...s,
         status:    "error",
-        error:     wasAborted
-          ? (errorCode === "connection-lost"
-              ? "Connection lost during test"
-              : "Test was cancelled")
-          : err instanceof Error ? err.message : "Test failed",
+        error:     errorMessage,
         errorCode,
       }));
     }
